@@ -4,8 +4,7 @@ A new Flutter project.
 
 ## Getting Started
 
-- Ahmad Hanif Habib Annafi 123210147
-- Muhammad Hafizh Maulana 123210194
+- Muhammad Hafizh Maulana 123210194 IF-B
 
 A few resources to get you started if this is your first Flutter project:
 
