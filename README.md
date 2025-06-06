@@ -4,7 +4,7 @@ A new Flutter project.
 
 ## Getting Started
 
-- Muhammad Hafizh Maulana 123210194 IF-B
+- Muhammad Hafizh Maulana 123210194 TPM IF-B
 
 A few resources to get you started if this is your first Flutter project:
 
