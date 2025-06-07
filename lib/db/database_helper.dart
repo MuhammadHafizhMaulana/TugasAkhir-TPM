@@ -158,6 +158,12 @@ class DBHelper {
   return await db.query('favorites');
 }
 
+// Fungsi mengambil semua user (List<Map<String,dynamic>>)
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final db = await database;
+    return await db.query('users');  // ambil semua data dari tabel users
+  }
+
   // CRUD CART
 
   Future<void> addToCart(int userId, int productId, double harga) async {

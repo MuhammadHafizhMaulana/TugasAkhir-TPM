@@ -12,11 +12,29 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  bool _isPasswordVisible = false; // Untuk toggle visibilitas password
+
   void saveLoginData(Map<String, dynamic> userData) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setInt('userId', userData['id']);
     await prefs.setString('userEmail', userData['email']);
+  }
+
+  // Fungsi enkripsi Caesar cipher untuk email
+  String caesarEncrypt(String text, int key) {
+    return String.fromCharCodes(text.runes.map((char) {
+      if (char >= 65 && char <= 90) {
+        // Uppercase
+        return ((char - 65 + key) % 26) + 65;
+      } else if (char >= 97 && char <= 122) {
+        // Lowercase
+        return ((char - 97 + key) % 26) + 97;
+      } else {
+        // Non alphabetic characters tetap sama
+        return char;
+      }
+    }));
   }
 
   Future<void> login() async {
@@ -30,27 +48,27 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // Enkripsi email dengan Caesar cipher key 14
+    String encryptedEmail = caesarEncrypt(email, 14);
+
     final db = DBHelper();
     final user = await db.getUser(
-      email,
+      encryptedEmail,
       password,
-    ); // Ganti 'null' dengan argumen yang sesuai jika diperlukan
+    );
 
     if (user != null) {
       saveLoginData(user);
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Email atau password salah")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Email atau password salah")),
+      );
     }
   }
 
-  bool _isPasswordVisible = false; // Melihat Password
-
   @override
   void dispose() {
-    // Jangan lupa dispose controller saat widget dihancurkan
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -60,7 +78,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      // Background gradient hitam ke emas
       body: Container(
         height: MediaQuery.of(context).size.height,
         width: double.infinity,
@@ -69,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF121212), // hitam pekat
+              Color(0xFF121212),
               Color.fromARGB(255, 6, 30, 135),
             ],
           ),
@@ -91,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFFFD700), // emas cerah
+                              color: Color(0xFFFFD700),
                               fontFamily: 'Garamond',
                             ),
                           ),
@@ -152,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
                             minWidth: double.infinity,
                             height: 60,
                             onPressed: login,
-                            color: Color(0xFFFFD700), // tombol emas
+                            color: Color(0xFFFFD700),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50),
@@ -184,8 +201,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           GestureDetector(
                             onTap: () {
-                              Color.fromARGB(255, 0, 0, 0);
-
                               Navigator.pushNamed(context, '/signup');
                             },
                             child: Text(
@@ -259,22 +274,19 @@ class _LoginPageState extends State<LoginPage> {
             border: OutlineInputBorder(
               borderSide: BorderSide(color: borderColor ?? Colors.white54),
             ),
-            suffixIcon:
-                isPassword
-                    ? IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: textColor ?? Colors.white54,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    )
-                    : null,
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: textColor ?? Colors.white54,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  )
+                : null,
           ),
         ),
         SizedBox(height: 30),

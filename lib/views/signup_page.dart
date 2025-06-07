@@ -20,9 +20,27 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _registerUser() async {
     if (!_formKey.currentState!.validate()) return;
 
+    String caesarEncrypt(String text, int key) {
+  return String.fromCharCodes(text.runes.map((char) {
+    if (char >= 65 && char <= 90) {
+      // Uppercase
+      return ((char - 65 + key) % 26) + 65;
+    } else if (char >= 97 && char <= 122) {
+      // Lowercase
+      return ((char - 97 + key) % 26) + 97;
+    } else {
+      // Non-alphabetic characters stay the same
+      return char;
+    }
+  }));
+}
+
+
+
     setState(() => isLoading = true);
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
+    final name = caesarEncrypt(nameController.text.trim(), 7);
+    final email = caesarEncrypt(emailController.text.trim(), 14);
+
     final password = passwordController.text;
 
     final db = DBHelper();
