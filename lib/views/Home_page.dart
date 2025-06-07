@@ -3,10 +3,12 @@ import 'package:royal_clothes/presenters/product_presenter.dart';
 import 'package:royal_clothes/models/product_model.dart';
 import 'package:royal_clothes/views/SettingsPage.dart';
 import 'package:royal_clothes/views/cart_page.dart';
+import 'package:royal_clothes/views/kesan_saran_page.dart';
 import 'package:royal_clothes/views/sidebar_menu_page.dart';
 import 'package:royal_clothes/views/appBar_page.dart';
 import 'package:royal_clothes/views/detail_product_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,6 +25,8 @@ class _HomePageState extends State<HomePage> implements ProductView {
   final SettingsService _settingsService = SettingsService();
 
   final TextEditingController _searchController = TextEditingController();
+
+  int _currentIndex = 0; // Deklarasi current index
 
   @override
   void initState() {
@@ -56,8 +60,9 @@ class _HomePageState extends State<HomePage> implements ProductView {
   void showProductList(List<Product> products) {
     setState(() {
       productList = products;
-      _filteredProducts = List.from(products); // Set awal filter
+      _filteredProducts = List.from(products);
       errorMessage = null;
+      isLoading = false;
     });
   }
 
@@ -67,6 +72,7 @@ class _HomePageState extends State<HomePage> implements ProductView {
       errorMessage = message;
       productList = [];
       _filteredProducts = [];
+      isLoading = false;
     });
   }
 
@@ -85,8 +91,94 @@ class _HomePageState extends State<HomePage> implements ProductView {
     });
   }
 
+  Widget _buildHomeTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: _filterSearchResults,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Cari produk...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              prefixIcon: const Icon(Icons.search, color: Colors.white),
+              filled: true,
+              fillColor: const Color(0xFF2C2C2C),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_filteredProducts.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Text(
+                  "Produk tidak ditemukan",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: GridView.builder(
+                itemCount: _filteredProducts.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 15,
+                  crossAxisSpacing: 15,
+                  childAspectRatio: 0.65,
+                ),
+                itemBuilder: (context, index) {
+                  final product = _filteredProducts[index];
+                  return productCard(product);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _kesanSaran() {
+    return KesanSaranPage();
+  }
+
+  Widget _buildSettingsTab() {
+    return SettingsPage();
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget bodyContent;
+    if (isLoading) {
+      bodyContent = const Center(child: CircularProgressIndicator());
+    } else if (errorMessage != null) {
+      bodyContent = Center(
+        child: Text(
+          errorMessage!,
+          style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+        ),
+      );
+    } else {
+      switch (_currentIndex) {
+        case 0:
+          bodyContent = _buildHomeTab();
+          break;
+        case 1:
+          bodyContent = _kesanSaran();
+          break;
+        case 2:
+          bodyContent = _buildSettingsTab();
+          break;
+        default:
+          bodyContent = _buildHomeTab();
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppbarPage(
@@ -97,7 +189,6 @@ class _HomePageState extends State<HomePage> implements ProductView {
             onPressed: () async {
               SharedPreferences prefs = await SharedPreferences.getInstance();
               int? userId = prefs.getInt('userId');
-
               if (userId != null) {
                 Navigator.push(
                   context,
@@ -113,68 +204,35 @@ class _HomePageState extends State<HomePage> implements ProductView {
         ],
       ),
       drawer: SidebarMenu(),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-              ? Center(
-                  child: Text(
-                    errorMessage!,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 16),
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // 🔍 Search TextField
-                      TextField(
-                        controller: _searchController,
-                        onChanged: _filterSearchResults,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Cari produk...',
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          prefixIcon: const Icon(Icons.search, color: Colors.white),
-                          filled: true,
-                          fillColor: const Color(0xFF2C2C2C),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ❌ Jika tidak ada hasil
-                      if (_filteredProducts.isEmpty)
-                        const Expanded(
-                          child: Center(
-                            child: Text(
-                              "Produk tidak ditemukan",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                        )
-                      else
-                        // ✅ Menampilkan Grid produk
-                        Expanded(
-                          child: GridView.builder(
-                            itemCount: _filteredProducts.length,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 15,
-                              crossAxisSpacing: 15,
-                              childAspectRatio: 0.65,
-                            ),
-                            itemBuilder: (context, index) {
-                              final product = _filteredProducts[index];
-                              return productCard(product);
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+      body: bodyContent,
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFF1F1F1F),
+        selectedItemColor: const Color(0xFFFFD700),
+        unselectedItemColor: Colors.white54,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index; // perbaikan disini
+            if (_currentIndex == 0) {
+              presenter.loadProductData('phones');
+            }
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.feedback),
+            label: 'Kesan Saran',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 
